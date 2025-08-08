@@ -302,10 +302,11 @@ static private_key_t *openssl_private_key_load(key_type_t type, va_list args)
 				case EVP_PKEY_EC:
 					return openssl_ec_private_key_create(key, FALSE);
 #endif
-#if OPENSSL_VERSION_NUMBER >= 0x1010100fL && !defined(OPENSSL_NO_EC) && \
-	!defined(OPENSSL_IS_AWSLC)
+#if OPENSSL_VERSION_NUMBER >= 0x1010100fL && !defined(OPENSSL_NO_EC)
 				case EVP_PKEY_ED25519:
+#ifndef OPENSSL_IS_AWSLC
 				case EVP_PKEY_ED448:
+#endif
 					return openssl_ed_private_key_create(key, FALSE);
 #endif /* OPENSSL_VERSION_NUMBER && !OPENSSL_NO_EC && !OPENSSL_IS_AWSLC */
 				default:
@@ -667,22 +668,29 @@ METHOD(plugin_t, get_features, int,
 		PLUGIN_PROVIDE(PUBKEY_VERIFY, SIGN_ECDSA_521),
 #endif
 #endif /* OPENSSL_NO_ECDSA */
-#if OPENSSL_VERSION_NUMBER >= 0x1010100fL && !defined(OPENSSL_NO_EC) && \
-	!defined(OPENSSL_IS_AWSLC)
+#if OPENSSL_VERSION_NUMBER >= 0x1010100fL && !defined(OPENSSL_NO_EC)
 		/* EdDSA private/public key loading */
 		PLUGIN_REGISTER(PUBKEY, openssl_ed_public_key_load, TRUE),
 			PLUGIN_PROVIDE(PUBKEY, KEY_ED25519),
+#ifndef OPENSSL_IS_AWSLC
 			PLUGIN_PROVIDE(PUBKEY, KEY_ED448),
+#endif
 		PLUGIN_REGISTER(PRIVKEY, openssl_ed_private_key_load, TRUE),
 			PLUGIN_PROVIDE(PRIVKEY, KEY_ED25519),
+#ifndef OPENSSL_IS_AWSLC
 			PLUGIN_PROVIDE(PRIVKEY, KEY_ED448),
+#endif
 		PLUGIN_REGISTER(PRIVKEY_GEN, openssl_ed_private_key_gen, FALSE),
 			PLUGIN_PROVIDE(PRIVKEY_GEN, KEY_ED25519),
+#ifndef OPENSSL_IS_AWSLC
 			PLUGIN_PROVIDE(PRIVKEY_GEN, KEY_ED448),
+#endif
 		PLUGIN_PROVIDE(PRIVKEY_SIGN, SIGN_ED25519),
-		PLUGIN_PROVIDE(PRIVKEY_SIGN, SIGN_ED448),
 		PLUGIN_PROVIDE(PUBKEY_VERIFY, SIGN_ED25519),
+#ifndef OPENSSL_IS_AWSLC
+		PLUGIN_PROVIDE(PRIVKEY_SIGN, SIGN_ED448),
 		PLUGIN_PROVIDE(PUBKEY_VERIFY, SIGN_ED448),
+#endif
 		/* register a pro forma identity hasher, never instantiated */
 		PLUGIN_REGISTER(HASHER, return_null),
 			PLUGIN_PROVIDE(HASHER, HASH_IDENTITY),
